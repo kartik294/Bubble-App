@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bubbles App</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    canvas {
+      border: 4px solid black;
+      margin-top: 20px; 
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); 
+    }
+
+    .heading {
+      font-size: 24px;
+      margin-top: 20px;
+    }
+
+    .reset-button {
+      margin-top: 20px; 
+      background-color: white;
+      border: 2px solid black;
+      border-radius: 5px;
+      padding: 10px 20px;
+      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2); 
+      cursor: pointer;
+    }
+
+    .reset-button:hover {
+      background-color: #f0f0f0; 
+    }
+  </style>
+</head>
+<body>
+  <h1 class="heading">Bubble App</h1>
+  <canvas id="myCanvas" width="900" height="500"></canvas>
+  <button class="reset-button" onclick="resetCanvas()">Reset</button> 
+  
+  <script>
+    const canvas = document.getElementById('myCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let arrows = []; 
+    let score = 0; 
+
+    for (let i = 0; i < 4; i++) {
+      arrows.push({
+        x: canvas.width - 160,
+        y: 100 + i * 90,
+        targetX: null,
+        targetY: null,
+        isMoving: false
+      });
+    }
+
+    let circleColors = ['yellow', 'blue', 'red', 'green']; // Colors of circles
+
+
+    function drawCircle(x, y, color) {
+      ctx.beginPath();
+      ctx.arc(x, y, 35, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+
+    function drawArrow(x, y) {
+      const tailWidth = 60;
+      const tailHeight = 8;
+      const arrowHeadHeight = 6;
+
+      const arrowCenterY = y - arrowHeadHeight;
+      const tailY = arrowCenterY + arrowHeadHeight / 2;
+      const arrowEndX = x + 35 + tailWidth;
+
+      ctx.beginPath();
+      ctx.moveTo(x, arrowCenterY);
+      ctx.lineTo(x + 35, arrowCenterY - arrowHeadHeight);
+      ctx.lineTo(x + 35, tailY);
+      ctx.lineTo(arrowEndX, tailY);
+      ctx.lineTo(arrowEndX, tailY - tailHeight);
+      ctx.lineTo(x + 35, tailY - tailHeight);
+      ctx.lineTo(x + 35, arrowCenterY + arrowHeadHeight);
+      ctx.closePath();
+      ctx.fillStyle = 'black';
+      ctx.fill();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < circleColors.length; i++) {
+        drawCircle(70, 70 + i * 90, circleColors[i]);
+      }
+
+      for (let arrow of arrows) {
+        drawArrow(arrow.x, arrow.y);
+      }
+
+     
+      ctx.fillStyle = 'black';
+      ctx.font = '24px Arial';
+      ctx.fillText('Score: ' + score, 20, 40);
+    }
+
+    
+    function handleClick(event) {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+
+      for (let i = 0; i < circleColors.length; i++) {
+        const circleX = 70;
+        const circleY = 70 + i * 90;
+        if (
+          mouseX >= circleX - 35 &&
+          mouseX <= circleX + 35 &&
+          mouseY >= circleY - 35 &&
+          mouseY <= circleY + 35
+        ) {
+          arrows[i].targetX = circleX;
+          arrows[i].targetY = circleY;
+          arrows[i].isMoving = true;
+          break;
+        }
+      }
+    }
+
+
+    function updateArrowPosition() {
+      for (let arrow of arrows) {
+        if (arrow.isMoving) {
+          const dx = arrow.targetX - arrow.x;
+          const dy = arrow.targetY - arrow.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const speed = 5;
+
+          if (distance < speed) {
+            arrow.x = arrow.targetX;
+            arrow.y = arrow.targetY;
+            arrow.isMoving = false;
+
+          
+            for (let i = 0; i < circleColors.length; i++) {
+              if (arrow.targetX === 70 && arrow.targetY === 70 + i * 90) {
+                circleColors[i] = getRandomColor();
+                score += 10; 
+                break;
+              }
+            }
+          } else {
+            arrow.x += dx / distance * speed;
+            arrow.y += dy / distance * speed;
+          }
+        }
+      }
+      draw();
+    }
+
+  
+    function resetCanvas() {
+      for (let arrow of arrows) {
+        arrow.x = canvas.width - 160;
+        arrow.y = 100 + (arrows.indexOf(arrow) * 90);
+        arrow.targetX = null;
+        arrow.targetY = null;
+        arrow.isMoving = false;
+      }
+      circleColors = ['yellow', 'blue', 'red', 'green'];
+      score = 0;
+      draw();
+    }
+
+   
+    function getRandomColor() {
+      const letters = '0123456789ABCDEF';
+      let color = '#';
+      for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      return color;
+    }
+
+    canvas.addEventListener('click', handleClick);
+
+  
+    function animate() {
+      updateArrowPosition();
+      requestAnimationFrame(animate);
+    }
+
+    draw();
+    animate();
+  </script>
+</body>
+</html>
